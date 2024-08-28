@@ -1,12 +1,13 @@
 import bpy
 from bpy.types import PropertyGroup, UIList, Collection
-from bpy.props import StringProperty, PointerProperty, CollectionProperty
+from bpy.props import StringProperty, PointerProperty, CollectionProperty, FloatProperty
 from .surfaceprops import SurfaceProp
 
 class CollectionData(PropertyGroup):
     collision: PointerProperty(name='Collision', type=Collection)
     surfaceprops: CollectionProperty(type=SurfaceProp)
     surfaceprop: StringProperty(name='Surface Property', default='default')
+    scale: FloatProperty(name='Scale', default=0.4) # TODO: Either pre-scale the mesh or embed scale value
 
 class ModelData(CollectionData):
     name: StringProperty(name='Name', default='Model')

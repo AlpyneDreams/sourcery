@@ -50,6 +50,7 @@ class ExportGLTF2_Sourcery(gltf2.ExportGLTF2):
             header.label(text="Properties")
             if body:
                 col = body.column()
+                col.prop(data, 'scale')
                 col.prop(data, 'collision', icon='MESH_ICOSPHERE')
                 col.prop_search(
                     data, 'surfaceprop',
