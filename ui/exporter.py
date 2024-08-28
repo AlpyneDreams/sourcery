@@ -6,7 +6,7 @@ from ..data.prefs import SourcePreferences
 
 class IO_FH_src_gltf(bpy.types.FileHandler):
     bl_idname = "IO_FH_src_gltf"
-    bl_label = "glTF (Sourcery)"
+    bl_label = "glTF (Source Engine)"
     bl_import_operator = "import_scene.gltf"
     bl_export_operator = "export_scene.src_gltf"
     bl_file_extensions = ".glb;.gltf"
@@ -120,6 +120,7 @@ def export_panel_data_scene_graph(layout, operator):
     header, body = layout.panel("GLTF_export_data_scene_graph", default_closed=True)
     header.label(text="Scene Graph")
     if body:
+        body.use_property_split = False
         body.prop(operator, 'at_collection_center')         # moved from export_panel_collection
         body.prop(operator, 'export_gn_mesh')
         #body.prop(operator, 'export_gpu_instances')        # unsupported
