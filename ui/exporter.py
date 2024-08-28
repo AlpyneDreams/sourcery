@@ -1,0 +1,106 @@
+import bpy
+from bpy.props import BoolProperty, EnumProperty
+import io_scene_gltf2 as gltf2
+from ..util import override_props
+
+class IO_FH_src_gltf(bpy.types.FileHandler):
+    bl_idname = "IO_FH_src_gltf"
+    bl_label = "glTF (Sourcery)"
+    bl_import_operator = "import_scene.gltf"
+    bl_export_operator = "export_scene.src_gltf"
+    bl_file_extensions = ".glb;.gltf"
+
+@override_props
+class ExportGLTF2_Sourcery(gltf2.ExportGLTF2):
+    """Export scene as a specialized glTF 2.0 file"""
+    bl_idname = 'export_scene.src_gltf'
+    bl_label = 'Export glTF (Sourcery)'
+
+    # Don't overwrite glTF settings
+    will_save_settings: BoolProperty(default=False)
+
+    # Disable unsupported features
+    export_morph: BoolProperty(default=False)
+    export_skins: BoolProperty(default=False)
+    export_animations: BoolProperty(default=False)
+
+    # Don't export textures
+    export_image_format: EnumProperty(default='NONE')
+
+    # Enable certain things by default
+    export_extras: BoolProperty(default=True)   # export custom properties as extras
+    export_apply: BoolProperty(default=True)    # apply modifiers
+    export_tangents: BoolProperty(default=True) # export tangents
+
+    def draw(self, context):
+        operator = self
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        # Are we inside the File browser
+        is_file_browser = context.space_data.type == 'FILE_BROWSER'
+
+        export_main(layout, operator, is_file_browser)
+        #gltf2.export_panel_collection(layout, operator, is_file_browser)   # only contains 'at_collection_center', moved to Scene Graph
+        export_panel_include(layout, operator, is_file_browser)
+        #gltf2.export_panel_transform(layout, operator)                     # only contains +Y up option, we always want that
+        export_panel_data(layout, operator)
+        #gltf2.export_panel_animation(layout, operator)                     # unsupported
+
+        # If gltfpack is not setup in plugin preferences -> don't show any gltfpack relevant options in export dialog
+        gltfpack_path = context.preferences.addons['io_scene_gltf2'].preferences.gltfpack_path_ui.strip()
+        if gltfpack_path != '':
+            gltf2.export_panel_gltfpack(layout, operator)
+
+        gltf2.export_panel_user_extension(context, layout)
+
+def export_main(layout, operator, is_file_browser):
+    # Override: disable changing export format
+    col = layout.column()
+    col.enabled = False
+    col.prop(operator, 'export_format')
+    if operator.export_format == 'GLTF_SEPARATE':
+        layout.prop(operator, 'export_keep_originals')
+        if operator.export_keep_originals is False:
+            layout.prop(operator, 'export_texture_dir', icon='FILE_FOLDER')
+    if operator.export_format == 'GLTF_EMBEDDED':
+        layout.label(
+            text="This is the least efficient of the available forms, and should only be used when required.",
+            icon='ERROR')
+
+    layout.prop(operator, 'export_copyright')
+    if is_file_browser:
+        layout.prop(operator, 'will_save_settings')
+
+
+def export_panel_include(layout, operator, is_file_browser):
+    if not is_file_browser: # Only for file browser mode for now
+        return
+    return gltf2.export_panel_include(layout, operator, is_file_browser)
+
+def export_panel_data(layout, operator):
+    #header, body = layout.panel("GLTF_export_data", default_closed=True)
+    #header.label(text="Data")
+    body = layout
+    if body:
+        export_panel_data_scene_graph(body, operator)
+        gltf2.export_panel_data_mesh(body, operator)
+        #gltf2.export_panel_data_material(body, operator)   # not exposed to user
+        #gltf2.export_panel_data_shapekeys(body, operator)  # unsupported
+        #gltf2.export_panel_data_armature(body, operator)   # unsupported
+        #gltf2.export_panel_data_skinning(body, operator)   # unsupported
+        #gltf2.export_panel_data_lighting(body, operator)   # unsupported
+
+        if gltf2.is_draco_available():
+            gltf2.export_panel_data_compression(body, operator)
+
+def export_panel_data_scene_graph(layout, operator):
+    header, body = layout.panel("GLTF_export_data_scene_graph", default_closed=True)
+    header.label(text="Scene Graph")
+    if body:
+        body.prop(operator, 'at_collection_center')         # moved from export_panel_collection
+        body.prop(operator, 'export_gn_mesh')
+        #body.prop(operator, 'export_gpu_instances')        # unsupported
+        body.prop(operator, 'export_hierarchy_flatten_objs')
+        body.prop(operator, 'export_hierarchy_full_collections')

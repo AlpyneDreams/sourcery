@@ -141,7 +141,7 @@ def get_register_base_types():
         "AddonPreferences", "Header", "Menu",
         "Node", "NodeSocket", "NodeTree",
         "UIList", "RenderEngine",
-        "Gizmo", "GizmoGroup",
+        "Gizmo", "GizmoGroup", "FileHandler"
     ])
 
 
