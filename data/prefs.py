@@ -62,6 +62,9 @@ class SourcePreferences(SourcePrefs, AddonPreferences):
         layout = self.layout
         prefs = SourcePreferences.get()
 
+        header = layout.row()
+        header.alignment = 'CENTER'
+        header.label(text="Games")
         game = ui.draw_list(layout, 'SRC_UL_game_list', prefs, 'games', prefs, 'games_active', rows=(4 if len(self.games) > 1 else 3))
         
         if game is not None:

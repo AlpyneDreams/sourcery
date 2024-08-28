@@ -3,12 +3,14 @@ from bpy.types import PropertyGroup, UIList, Collection
 from bpy.props import StringProperty, PointerProperty, CollectionProperty
 from .surfaceprops import SurfaceProp
 
-class ModelData(PropertyGroup):
-    name: StringProperty(name='Name', default='Model')
-    collection: PointerProperty(name='Reference', type=Collection)
+class CollectionData(PropertyGroup):
     collision: PointerProperty(name='Collision', type=Collection)
     surfaceprops: CollectionProperty(type=SurfaceProp)
     surfaceprop: StringProperty(name='Surface Property', default='default')
+
+class ModelData(CollectionData):
+    name: StringProperty(name='Name', default='Model')
+    collection: PointerProperty(name='Reference', type=Collection)
 
 class SourceData(PropertyGroup):
     models: CollectionProperty(type=ModelData)
@@ -26,3 +28,5 @@ class SourceData(PropertyGroup):
 
 def register():
     bpy.types.Scene.sourcery_data = bpy.props.PointerProperty(type=SourceData)
+    bpy.types.Collection.sourcery_data = bpy.props.PointerProperty(type=CollectionData)
+

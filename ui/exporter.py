@@ -2,6 +2,7 @@ import bpy
 from bpy.props import BoolProperty, EnumProperty
 import io_scene_gltf2 as gltf2
 from ..util import override_props
+from ..data.prefs import SourcePreferences
 
 class IO_FH_src_gltf(bpy.types.FileHandler):
     bl_idname = "IO_FH_src_gltf"
@@ -41,19 +42,39 @@ class ExportGLTF2_Sourcery(gltf2.ExportGLTF2):
         # Are we inside the File browser
         is_file_browser = context.space_data.type == 'FILE_BROWSER'
 
-        export_main(layout, operator, is_file_browser)
-        #gltf2.export_panel_collection(layout, operator, is_file_browser)   # only contains 'at_collection_center', moved to Scene Graph
-        export_panel_include(layout, operator, is_file_browser)
-        #gltf2.export_panel_transform(layout, operator)                     # only contains +Y up option, we always want that
-        export_panel_data(layout, operator)
-        #gltf2.export_panel_animation(layout, operator)                     # unsupported
+        if context.collection and context.collection.sourcery_data:
+            data = context.collection.sourcery_data
+            prefs = SourcePreferences.get()
 
-        # If gltfpack is not setup in plugin preferences -> don't show any gltfpack relevant options in export dialog
-        gltfpack_path = context.preferences.addons['io_scene_gltf2'].preferences.gltfpack_path_ui.strip()
-        if gltfpack_path != '':
-            gltf2.export_panel_gltfpack(layout, operator)
+            header, body = layout.panel("SRC_gltf_props")
+            header.label(text="Properties")
+            if body:
+                col = body.column()
+                col.prop(data, 'collision', icon='MESH_ICOSPHERE')
+                col.prop_search(
+                    data, 'surfaceprop',
+                    prefs, 'surfaceprops',
+                    text='Surface Property',
+                    results_are_suggestions=True,
+                    icon='PLAY_SOUND'
+                )
 
-        gltf2.export_panel_user_extension(context, layout)
+        header, body = layout.panel("SRC_gltf_options", default_closed=True)
+        header.label(text="glTF Options")
+        if body:
+            export_main(body, operator, is_file_browser)
+            #gltf2.export_panel_collection(body, operator, is_file_browser)   # only contains 'at_collection_center', moved to Scene Graph
+            export_panel_include(body, operator, is_file_browser)
+            #gltf2.export_panel_transform(body, operator)                     # only contains +Y up option, we always want that
+            export_panel_data(body, operator)
+            #gltf2.export_panel_animation(body, operator)                     # unsupported
+
+            # If gltfpack is not setup in plugin preferences -> don't show any gltfpack relevant options in export dialog
+            gltfpack_path = context.preferences.addons['io_scene_gltf2'].preferences.gltfpack_path_ui.strip()
+            if gltfpack_path != '':
+                gltf2.export_panel_gltfpack(body, operator)
+
+            gltf2.export_panel_user_extension(context, body)
 
 def export_main(layout, operator, is_file_browser):
     # Override: disable changing export format
