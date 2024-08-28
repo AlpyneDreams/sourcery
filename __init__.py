@@ -1,9 +1,9 @@
 bl_info = {
     "name" : "Sourcery",
     "author" : "Alpyne",
-    "description" : "",
-    "blender" : (2, 80, 0),
-    "version" : (1, 0, 0),
+    "description" : "Source Engine glTF tools.",
+    "blender" : (4, 2, 0),
+    "version" : (0, 0, 2),
     "location" : "",
     "warning" : "",
     "category" : "Generic"
