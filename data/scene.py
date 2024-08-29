@@ -9,6 +9,7 @@ class CollectionData(PropertyGroup):
     surfaceprop: StringProperty(name='Surface Property', default='default')
     scale: FloatProperty(name='Scale', default=0.4) # TODO: Either pre-scale the mesh or embed scale value
 
+'''
 class ModelData(CollectionData):
     name: StringProperty(name='Name', default='Model')
     collection: PointerProperty(name='Reference', type=Collection)
@@ -24,10 +25,11 @@ class SourceData(PropertyGroup):
     @staticmethod
     def get(context) -> 'SourceData':
         return context.scene.sourcery_data
+'''
 
 ###############################################################################
 
 def register():
-    bpy.types.Scene.sourcery_data = bpy.props.PointerProperty(type=SourceData)
+    #bpy.types.Scene.sourcery_data = bpy.props.PointerProperty(type=SourceData)
     bpy.types.Collection.sourcery_data = bpy.props.PointerProperty(type=CollectionData)
 

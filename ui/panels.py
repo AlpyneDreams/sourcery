@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import Panel, UIList, Operator
-from ..data.scene import SourceData
+#from ..data.scene import SourceData
 from ..data.prefs import SourcePreferences
 from . import lists
 
