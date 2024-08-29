@@ -4,6 +4,8 @@ from ..data.scene import SourceData
 from ..data.prefs import SourcePreferences
 from . import lists
 
+'''
+
 class SourcePanel:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -71,3 +73,4 @@ class ConfigPanel(SourcePanel, Panel):
         prefs.draw(context)
 
 
+'''
