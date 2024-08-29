@@ -50,15 +50,17 @@ class ExportGLTF2_Sourcery(bpy.types.Operator, gltf2.ExportGLTF2_Base, ExportHel
             header.label(text="Properties")
             if body:
                 col = body.column()
-                col.prop(data, 'scale')
-                col.prop(data, 'collision', icon='MESH_ICOSPHERE')
-                col.prop_search(
-                    data, 'surfaceprop',
-                    prefs, 'surfaceprops',
-                    text='Surface Property',
-                    results_are_suggestions=True,
-                    icon='PLAY_SOUND'
-                )
+                col.prop(data, 'scale_mode')
+                if data.scale_mode == 'CUSTOM':
+                    col.prop(data, 'scale')
+                #col.prop(data, 'collision', icon='MESH_ICOSPHERE')
+                #col.prop_search(
+                #    data, 'surfaceprop',
+                #    prefs, 'surfaceprops',
+                #    text='Surface Property',
+                #    results_are_suggestions=True,
+                #    icon='PLAY_SOUND'
+                #)
 
         header, body = layout.panel("SRC_gltf_options", default_closed=True)
         header.label(text="glTF Options")
@@ -80,7 +82,7 @@ class ExportGLTF2_Sourcery(bpy.types.Operator, gltf2.ExportGLTF2_Base, ExportHel
 def export_main(layout, operator, is_file_browser):
     # Override: disable changing export format
     col = layout.column()
-    col.enabled = False
+    #col.enabled = False
     col.prop(operator, 'export_format')
     if operator.export_format == 'GLTF_SEPARATE':
         layout.prop(operator, 'export_keep_originals')

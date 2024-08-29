@@ -1,3 +1,3 @@
 # Todo
-- Maybe just register as a custom exporter or extend glTF. Less data we have to manage
-    - Can still have the global list
+- Don't export Sourcery data if using the regular glTF collection exporter
+- May want to have per-scene or per-node data at some point
