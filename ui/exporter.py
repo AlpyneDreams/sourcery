@@ -30,7 +30,6 @@ class ExportGLTF2_Sourcery(bpy.types.Operator, gltf2.ExportGLTF2_Base, ExportHel
     export_image_format: EnumProperty(default='NONE')
 
     # Enable certain things by default
-    export_extras: BoolProperty(default=True)   # export custom properties as extras
     export_apply: BoolProperty(default=True)    # apply modifiers
     export_tangents: BoolProperty(default=True) # export tangents
 
