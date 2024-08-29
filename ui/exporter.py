@@ -3,6 +3,7 @@ from bpy.props import BoolProperty, EnumProperty
 import io_scene_gltf2 as gltf2
 from ..util import override_props
 from ..data.prefs import SourcePreferences
+from bpy_extras.io_utils import ExportHelper
 
 class IO_FH_src_gltf(bpy.types.FileHandler):
     bl_idname = "IO_FH_src_gltf"
@@ -12,7 +13,7 @@ class IO_FH_src_gltf(bpy.types.FileHandler):
     bl_file_extensions = ".glb;.gltf"
 
 @override_props
-class ExportGLTF2_Sourcery(gltf2.ExportGLTF2):
+class ExportGLTF2_Sourcery(bpy.types.Operator, gltf2.ExportGLTF2_Base, ExportHelper):
     """Export scene as a specialized glTF 2.0 file"""
     bl_idname = 'export_scene.src_gltf'
     bl_label = 'Export glTF (Sourcery)'
