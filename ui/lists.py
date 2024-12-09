@@ -12,14 +12,17 @@ def draw_list(
     index = getattr(data_index, key_index)
 
     col = row.column(align=True)
-    op = col.operator(add, icon='ADD', text='')
-    if add == 'src.add_item':
-        op.list_obj = data.data_path
-        op.list_key = key
-        op.index_obj = data_index.data_path
-        op.index_key = key_index
+    if add != None:
+        op = col.operator(add, icon='ADD', text='')
+        if add == 'src.add_item':
+            op.list_obj = data.data_path
+            op.list_key = key
+            op.index_obj = data_index.data_path
+            op.index_key = key_index
+    else:
+        op = col.operator('src.add_item_disabled', icon='ADD', text='')
 
-    if index >= 0:
+    if index >= 0 and remove != None:
         op = col.operator(remove, icon='REMOVE', text='')
         if remove == 'src.remove_item':
             op.list_obj = data.data_path
@@ -33,7 +36,7 @@ def draw_list(
 
     length = len(list)
     if length > 1:
-        if index > 0:
+        if index > 0 and move_up != None:
             op = col.operator(move_up, icon='TRIA_UP', text='')
             if move_up == 'src.move_item_up':
                 op.list_obj = data.data_path
@@ -43,7 +46,7 @@ def draw_list(
         else:
             op = col.operator('src.move_item_up_disabled', icon='TRIA_UP', text='')
         
-        if index >= 0 and index < length - 1:
+        if index >= 0 and index < length - 1 and move_down != None:
             op = col.operator(move_down, icon='TRIA_DOWN', text='')
             if move_down == 'src.move_item_down':
                 op.list_obj = data.data_path
@@ -138,6 +141,13 @@ class Disabled:
     
     def execute(self, context):
         return {'CANCELLED'}
+    
+
+class AddItemDisabled(Disabled, Operator):
+    bl_idname = 'src.add_item_disabled'
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+    bl_label = 'Add Item'
+    bl_description = 'Add a new item'
 
 class RemoveItemDisabled(Disabled, Operator):
     bl_idname = 'src.remove_item_disabled'
