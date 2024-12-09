@@ -1,5 +1,6 @@
 import bpy
 from bpy.props import BoolProperty, EnumProperty
+from ..data.scene import CollectionData
 import io_scene_gltf2 as gltf2
 from ..util import override_props
 from ..data.prefs import SourcePreferences
@@ -45,24 +46,13 @@ def draw_export_properties(self, context, operator, collection):
     is_file_browser = context.space_data.type == 'FILE_BROWSER'
 
     if collection and collection.sourcery_data:
-        data = collection.sourcery_data
+        data: CollectionData = collection.sourcery_data
         prefs = SourcePreferences.get()
 
         header, body = layout.panel("SRC_gltf_props")
         header.label(text="Properties")
         if body:
-            col = body.column()
-            col.prop(data, 'scale_mode')
-            if data.scale_mode == 'CUSTOM':
-                col.prop(data, 'scale')
-            #col.prop(data, 'collision', icon='MESH_ICOSPHERE')
-            #col.prop_search(
-            #    data, 'surfaceprop',
-            #    prefs, 'surfaceprops',
-            #    text='Surface Property',
-            #    results_are_suggestions=True,
-            #    icon='PLAY_SOUND'
-            #)
+            CollectionData.draw(data, body, context)
 
     header, body = layout.panel("SRC_gltf_options", default_closed=True)
     header.label(text="glTF Options")
