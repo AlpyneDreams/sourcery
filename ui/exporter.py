@@ -35,9 +35,9 @@ class ExportGLTF2_Sourcery(bpy.types.Operator, gltf2.ExportGLTF2_Base, ExportHel
     export_tangents: BoolProperty(default=True) # export tangents
 
     def draw(self, context):
-        draw_export_properties(self, context, self, context.collection)
+        draw_export_properties(self, context, self)
 
-def draw_export_properties(self, context, operator, collection):
+def draw_export_properties(self, context, operator, compact=False):
     layout = self.layout
     layout.use_property_split = True
     layout.use_property_decorate = False  # No animation.
@@ -45,8 +45,8 @@ def draw_export_properties(self, context, operator, collection):
     # Are we inside the File browser
     is_file_browser = context.space_data.type == 'FILE_BROWSER'
 
-    if collection and collection.sourcery_data:
-        data: CollectionData = collection.sourcery_data
+    if context.collection and context.collection.sourcery_data:
+        data: CollectionData = context.collection.sourcery_data
         prefs = SourcePreferences.get()
 
         header, body = layout.panel("SRC_gltf_props")
@@ -59,6 +59,7 @@ def draw_export_properties(self, context, operator, collection):
     if body:
         export_main(body, operator, is_file_browser)
         #gltf2.export_panel_collection(body, operator, is_file_browser)   # only contains 'at_collection_center', moved to Scene Graph
+        body.use_property_split = not compact
         export_panel_include(body, operator, is_file_browser)
         #gltf2.export_panel_transform(body, operator)                     # only contains +Y up option, we always want that
         export_panel_data(body, operator)

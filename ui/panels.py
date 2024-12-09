@@ -1,34 +1,59 @@
 import bpy
-from bpy.types import Panel, UIList, Operator
-#from ..data.scene import SourceData
+from bpy.types import Panel, UIList, Operator, Collection, UILayout
+from ..data.scene import SceneData
 from ..data.prefs import SourcePreferences
+from .exporter import draw_export_properties
 from . import lists
-
-'''
 
 class SourcePanel:
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = 'Sourcery'
 
+def get_src_exporter(collection: Collection):
+    for exp in collection.exporters:
+        if exp.export_properties.__class__.__name__ == 'EXPORT_SCENE_OT_src_gltf':
+            return exp
+    return None
+
+
 class ModelList(UIList):
     bl_idname = 'SRC_UL_model_list'
-    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+    def draw_item(self, context, layout, data, item: Collection, icon, active_data, active_propname):
         layout.prop(item, 'name', text='', icon='OUTLINER_COLLECTION', emboss=False, translate=False)
 
+    def filter_items(self, context, data, property):
+        items = getattr(data, property)
+        flags = [] #bpy.types.UI_UL_list.filter_items_by_name("base", self.bitflag_filter_item, items, "name")
+        for item in items:
+            # TODO: Filter by current scene somehow
+            flag = 0
+            exp = get_src_exporter(item)
+            if exp:
+                flag = self.bitflag_filter_item
+            flags.append(flag)
+        return (flags, [])
+
+''''
 class AddModel(Operator):
     bl_idname = 'src.add_model'
     bl_label = 'Add Model'
     bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        data = SourceData.get(context)
-        item = data.models.add()
-        if context.collection:
-            item.name = context.collection.name
-            item.collection = context.collection
+        # TODO
         return {'FINISHED'}
+    
+class RemoveModel(Operator):
+    bl_idname = 'src.remove_model'
+    bl_label = 'Remove Model'
+    bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
 
+    def execute(self, context):
+        # TODO
+        return {'FINISHED'}
+'''
+        
 class MainPanel(SourcePanel, Panel):
     bl_idname = 'SRC_PT_main'
     bl_label = 'Models'
@@ -36,31 +61,26 @@ class MainPanel(SourcePanel, Panel):
 
     def draw(self, context):
         layout = self.layout
-        data = SourceData.get(context)
+        scene_data = SceneData.get(context)
         prefs = SourcePreferences.get()
 
-        model = lists.draw_list(layout, 'SRC_UL_model_list', data, 'models', data, 'models_active', add='src.add_model')
-        if model:
-            (header, col) = layout.panel('model_props')
-            header.label(text='Model Properties')
-            col = col.column(align=False)
-            col.use_property_split = True
-            col.use_property_decorate = False
-            col.prop(model, 'name')
-            col.prop(model, 'collection')
-            col.prop(model, 'collision', icon='MESH_ICOSPHERE')
-            col.prop_search(
-                model, 'surfaceprop',
-                prefs, 'surfaceprops',
-                text='Surface Property',
-                results_are_suggestions=True,
-                icon='PLAY_SOUND'
-            )
+        collection: Collection = lists.draw_list_simple(layout, 'SRC_UL_model_list', bpy.data, 'collections', scene_data, 'models_active')
 
-        row = layout.row(align=True)
-        row.operator('src.add_item', icon='EXPORT', text='Export All')
+        if collection:
+            # Export settings
+            with context.temp_override(collection=collection):
+                exp = get_src_exporter(collection)
+                draw_export_properties(self, context, exp.export_properties, context.region.width < 360)
+
+        # Export and Export All buttons
+        row = layout.row()
+        if collection:
+            with context.temp_override(collection=collection):
+                row.operator('collection.export_all', icon='EXPORT', text='Export')
+        row.operator('wm.collection_export_all', icon='EXPORT', text='Export All')
 
 
+'''
 class ConfigPanel(SourcePanel, Panel):
     bl_idname = 'SRC_PT_sourcery'
     bl_label = 'Settings'
@@ -71,6 +91,5 @@ class ConfigPanel(SourcePanel, Panel):
         prefs = SourcePreferences.get()
         prefs.layout = self.layout
         prefs.draw(context)
-
 
 '''

@@ -1,6 +1,19 @@
 import bpy
 from bpy.types import Context, Operator
 
+def draw_list_simple(layout, list_type_name, data, key, data_index, key_index, *args, **kwargs):
+    row = layout.row()
+    row.template_list(list_type_name, '', data, key, data_index, key_index, *args, **kwargs)
+
+    list = getattr(data, key)
+    index = getattr(data_index, key_index)
+    length = len(list)
+
+    if index >= 0 and index < length:
+        return list[index]
+    else:
+        return None
+
 def draw_list(
         layout, list_type_name, data, key, data_index, key_index,
         add='src.add_item', remove='src.remove_item', move_up='src.move_item_up', move_down='src.move_item_down',

@@ -1,5 +1,5 @@
 import bpy
-from bpy.types import PropertyGroup, UIList, Collection, UILayout
+from bpy.types import PropertyGroup, UIList, Collection, UILayout, Context
 from bpy.props import StringProperty, PointerProperty, CollectionProperty, FloatProperty, EnumProperty
 from .surfaceprops import SurfaceProp
 
@@ -55,8 +55,11 @@ class CollectionData(PropertyGroup):
             case mode: data['$collision'] = mode.lower()
 
     @staticmethod
-    def draw(self, layout: UILayout, context):
-        layout.row().prop(self, 'collision_mode', expand=True)
+    def draw(self, layout: UILayout, context: Context):
+        compact = context.region.width < 500
+        
+        (layout if compact else layout.row()).prop(self, 'collision_mode', expand=True)
+        
         layout.prop(self, 'scale_mode')
         if self.scale_mode == 'CUSTOM':
             layout.prop(self, 'scale')
@@ -73,9 +76,10 @@ class CollectionData(PropertyGroup):
 class ModelData(CollectionData):
     name: StringProperty(name='Name', default='Model')
     collection: PointerProperty(name='Reference', type=Collection)
-
+'''
+    
 class SceneData(PropertyGroup):
-    models: CollectionProperty(type=ModelData)
+    #models: CollectionProperty(type=ModelData)
     models_active: bpy.props.IntProperty(default=-1)
 
     @property
@@ -85,11 +89,10 @@ class SceneData(PropertyGroup):
     @staticmethod
     def get(context) -> 'SceneData':
         return context.scene.sourcery_data
-'''
 
 ###############################################################################
 
 def register():
-    #bpy.types.Scene.sourcery_data = bpy.props.PointerProperty(type=SceneData)
+    bpy.types.Scene.sourcery_data = bpy.props.PointerProperty(type=SceneData)
     bpy.types.Collection.sourcery_data = bpy.props.PointerProperty(type=CollectionData)
 
