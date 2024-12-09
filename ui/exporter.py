@@ -34,50 +34,52 @@ class ExportGLTF2_Sourcery(bpy.types.Operator, gltf2.ExportGLTF2_Base, ExportHel
     export_tangents: BoolProperty(default=True) # export tangents
 
     def draw(self, context):
-        operator = self
-        layout = self.layout
-        layout.use_property_split = True
-        layout.use_property_decorate = False  # No animation.
+        draw_export_properties(self, context, self, context.collection)
 
-        # Are we inside the File browser
-        is_file_browser = context.space_data.type == 'FILE_BROWSER'
+def draw_export_properties(self, context, operator, collection):
+    layout = self.layout
+    layout.use_property_split = True
+    layout.use_property_decorate = False  # No animation.
 
-        if context.collection and context.collection.sourcery_data:
-            data = context.collection.sourcery_data
-            prefs = SourcePreferences.get()
+    # Are we inside the File browser
+    is_file_browser = context.space_data.type == 'FILE_BROWSER'
 
-            header, body = layout.panel("SRC_gltf_props")
-            header.label(text="Properties")
-            if body:
-                col = body.column()
-                col.prop(data, 'scale_mode')
-                if data.scale_mode == 'CUSTOM':
-                    col.prop(data, 'scale')
-                #col.prop(data, 'collision', icon='MESH_ICOSPHERE')
-                #col.prop_search(
-                #    data, 'surfaceprop',
-                #    prefs, 'surfaceprops',
-                #    text='Surface Property',
-                #    results_are_suggestions=True,
-                #    icon='PLAY_SOUND'
-                #)
+    if collection and collection.sourcery_data:
+        data = collection.sourcery_data
+        prefs = SourcePreferences.get()
 
-        header, body = layout.panel("SRC_gltf_options", default_closed=True)
-        header.label(text="glTF Options")
+        header, body = layout.panel("SRC_gltf_props")
+        header.label(text="Properties")
         if body:
-            export_main(body, operator, is_file_browser)
-            #gltf2.export_panel_collection(body, operator, is_file_browser)   # only contains 'at_collection_center', moved to Scene Graph
-            export_panel_include(body, operator, is_file_browser)
-            #gltf2.export_panel_transform(body, operator)                     # only contains +Y up option, we always want that
-            export_panel_data(body, operator)
-            #gltf2.export_panel_animation(body, operator)                     # unsupported
+            col = body.column()
+            col.prop(data, 'scale_mode')
+            if data.scale_mode == 'CUSTOM':
+                col.prop(data, 'scale')
+            #col.prop(data, 'collision', icon='MESH_ICOSPHERE')
+            #col.prop_search(
+            #    data, 'surfaceprop',
+            #    prefs, 'surfaceprops',
+            #    text='Surface Property',
+            #    results_are_suggestions=True,
+            #    icon='PLAY_SOUND'
+            #)
 
-            # If gltfpack is not setup in plugin preferences -> don't show any gltfpack relevant options in export dialog
-            gltfpack_path = context.preferences.addons['io_scene_gltf2'].preferences.gltfpack_path_ui.strip()
-            if gltfpack_path != '':
-                gltf2.export_panel_gltfpack(body, operator)
+    header, body = layout.panel("SRC_gltf_options", default_closed=True)
+    header.label(text="glTF Options")
+    if body:
+        export_main(body, operator, is_file_browser)
+        #gltf2.export_panel_collection(body, operator, is_file_browser)   # only contains 'at_collection_center', moved to Scene Graph
+        export_panel_include(body, operator, is_file_browser)
+        #gltf2.export_panel_transform(body, operator)                     # only contains +Y up option, we always want that
+        export_panel_data(body, operator)
+        #gltf2.export_panel_animation(body, operator)                     # unsupported
 
-            gltf2.export_panel_user_extension(context, body)
+        # If gltfpack is not setup in plugin preferences -> don't show any gltfpack relevant options in export dialog
+        gltfpack_path = context.preferences.addons['io_scene_gltf2'].preferences.gltfpack_path_ui.strip()
+        if gltfpack_path != '':
+            gltf2.export_panel_gltfpack(body, operator)
+
+        gltf2.export_panel_user_extension(context, body)
 
 def export_main(layout, operator, is_file_browser):
     # Override: disable changing export format
@@ -123,7 +125,6 @@ def export_panel_data_scene_graph(layout, operator):
     header, body = layout.panel("GLTF_export_data_scene_graph", default_closed=True)
     header.label(text="Scene Graph")
     if body:
-        body.use_property_split = False
         body.prop(operator, 'at_collection_center')         # moved from export_panel_collection
         body.prop(operator, 'export_gn_mesh')
         #body.prop(operator, 'export_gpu_instances')        # unsupported
