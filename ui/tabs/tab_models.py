@@ -56,46 +56,45 @@ class RemoveModel(Operator):
     bl_label = 'Remove Model'
     bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
 
-    # FIXME: For some reason context.temp_override(collection=collection) doesn't work
-    # for this operator when doing layout.operator, so we have to pass the collection name
-    target: bpy.props.StringProperty()
-
     def invoke(self, context, event):
         return context.window_manager.invoke_confirm(self, event, title='Remove exporter?')
 
     def execute(self, context):
-        collection = bpy.data.collections[self.target]
+        scene_data = SceneData.get(context)
+        collection = bpy.data.collections[scene_data.models_active]
         if collection:
             with context.temp_override(collection=collection):
                 idx = get_src_exporter_index(collection)
                 if idx is not None:
                     bpy.ops.collection.exporter_remove(index=idx)
-                    scene_data = SceneData.get(context)
                     while scene_data.models_active >= 0 and get_src_exporter(bpy.data.collections[scene_data.models_active]) is None:
                         scene_data.models_active -= 1
         return {'FINISHED'}
 
 ###############################################################################
 
-def draw_tab_models(panel, layout, context):
+def draw_tab_models(panel, layout: UILayout, context):
     scene_data = SceneData.get(context)
     prefs = SourcePreferences.get()
 
+    layout.separator()
+
     row = layout.row()
     collection: Collection = lists.draw_list_simple(row, 'SRC_UL_model_list', bpy.data, 'collections', scene_data, 'models_active')
+    layout.separator()
 
     col = row.column(align=True)
-    op = col.operator('src.add_model', icon='ADD', text='')
+    col.operator(AddModel.bl_idname, icon='ADD', text='')
 
     if collection:
         with context.temp_override(collection=collection):
             # Remove model
-            op = col.operator('src.remove_model', icon='REMOVE', text='')
-            op.target = collection.name
+            col.operator(RemoveModel.bl_idname, icon='REMOVE', text='')
 
             # Export settings
             exp = get_src_exporter(collection)
             if exp:
+                layout.prop(exp.export_properties, 'filepath')
                 draw_export_properties(panel, context, exp.export_properties, context.region.width < 360)
     else:
         col.operator('src.remove_item_disabled', icon='REMOVE', text='')

@@ -1,9 +1,8 @@
 import bpy
-from bpy.types import Panel, UIList, Operator, Collection, UILayout
-from ..data.scene import SceneData
+from bpy.types import Panel
+from ..data.scene import ObjectData
 from ..data.prefs import SourcePreferences
-from .exporter import draw_export_properties
-from . import lists, tabs
+from . import tabs
 
 class SourcePanel:
     bl_space_type = 'VIEW_3D'
@@ -23,8 +22,23 @@ class MainPanel(SourcePanel, Panel):
         prefs = SourcePreferences.get()
 
         layout.prop(prefs, 'tab_active', expand=True)
+        
         if prefs.tab_active == 'MODELS':
             tabs.draw_tab_models(self, layout, context)
+        elif prefs.tab_active == 'OBJECTS':
+            tabs.draw_tab_objects(self, layout, context)
+
+class ObjectListPanel(SourcePanel, Panel):
+    bl_idname = 'SRC_PT_objects'
+    bl_label = 'Tagged Objects'
+    bl_order = 1
+
+    @classmethod
+    def poll(cls, context):
+        return SourcePreferences.get().tab_active == 'OBJECTS'
+
+    def draw(self, context):
+        tabs.draw_panel_object_list(self, self.layout, context)
 
 
 '''
