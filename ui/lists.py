@@ -2,8 +2,7 @@ import bpy
 from bpy.types import Context, Operator
 
 def draw_list_simple(layout, list_type_name, data, key, data_index, key_index, *args, **kwargs):
-    row = layout.row()
-    row.template_list(list_type_name, '', data, key, data_index, key_index, *args, **kwargs)
+    layout.template_list(list_type_name, '', data, key, data_index, key_index, *args, **kwargs)
 
     list = getattr(data, key)
     index = getattr(data_index, key_index)
