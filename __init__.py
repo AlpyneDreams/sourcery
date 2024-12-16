@@ -13,7 +13,7 @@ GLTF_EXTENSION_NAME = "SRC_scene_data"
 
 import bpy
 from . import auto_load
-from .data.scene import CollectionData
+from .data.scene import CollectionData, ObjectData
 
 auto_load.init()
 
@@ -60,3 +60,18 @@ class glTF2ExportUserExtension:
             extension=extension,
             required=False
         )
+
+    def gather_node_hook(self, gltf2_node, blender_object, export_settings):
+        if 'sourcery_data' not in blender_object:
+            return
+    
+        data = blender_object.sourcery_data
+        extension = {}
+        ObjectData.save_to_gltf(data, extension)
+
+        if extension:
+            gltf2_node.extensions[GLTF_EXTENSION_NAME] = self.Extension(
+                name=GLTF_EXTENSION_NAME,
+                extension=extension,
+                required=False
+            )

@@ -1,6 +1,6 @@
 import bpy
 from bpy.types import PropertyGroup, UIList, Collection, UILayout, Context
-from bpy.props import StringProperty, PointerProperty, CollectionProperty, FloatProperty, EnumProperty
+from bpy.props import StringProperty, PointerProperty, BoolProperty, FloatProperty, EnumProperty
 from .surfaceprops import SurfaceProp
 
 SCALES = {
@@ -10,6 +10,27 @@ SCALES = {
     'SCALE_100': 100.0,
     'SCALE_1': 1.0,
 }
+
+COLLISION_MODE_ICONS = {
+    'AUTO': None,
+    'MESH': 'MESH_MONKEY',
+    'HULL': 'MESH_ICOSPHERE',
+    'BOX': 'MESH_CUBE',
+    'NONE': 'GHOST_DISABLED',
+}
+
+CollisionModeProperty = EnumProperty(
+    name='Collision',
+    items=(
+        ('AUTO',        "Auto",                 'Automatic based on model size.', '', 0),
+        ('MESH',        "Mesh",                 'Concave mesh collider.', 'MESH_MONKEY', 1),
+        ('HULL',        "Hull",                 'Convex hull collider.', 'MESH_ICOSPHERE', 2),
+        ('BOX',         "Box",                  'Box collider.', 'MESH_CUBE', 3),
+        ('NONE',        "None",                 'No collision.', 'GHOST_DISABLED', 4),
+    ),
+    description='Type of collisions to use.',
+    default='AUTO'
+)
 
 class CollectionData(PropertyGroup):
     #collision: PointerProperty(name='Collision', type=Collection)
@@ -30,18 +51,7 @@ class CollectionData(PropertyGroup):
     )
     scale: FloatProperty(name='Custom Scale', default=40.0)
     #collision: PointerProperty(name='Collision', type=Collection)
-    collision_mode: EnumProperty(
-        name='Collision',
-        items=(
-            ('AUTO',        "Auto",                 'Automatic based on model size.', '', 0),
-            ('MESH',        "Mesh",                 'Concave mesh collider.', 'MESH_MONKEY', 1),
-            ('HULL',        "Hull",                 'Convex hull collider.', 'MESH_ICOSPHERE', 2),
-            ('BOX',         "Box",                  'Box collider.', 'MESH_CUBE', 3),
-            ('NONE',        "None",                 'No collision.', 'PANEL_CLOSE', 4),
-        ),
-        description='Type of collisions to use.',
-        default='AUTO'
-    )
+    collision_mode: CollisionModeProperty
 
     @staticmethod
     def save_to_gltf(self, data):
@@ -72,6 +82,29 @@ class CollectionData(PropertyGroup):
         #    icon='PLAY_SOUND'
         #)
 
+class ObjectData(PropertyGroup):
+    modified: BoolProperty(name='Show in Tag List', default=False)
+    collision_mode: CollisionModeProperty
+
+    @staticmethod
+    def save_to_gltf(self, data):
+        match self.collision_mode:
+            case 'AUTO': pass
+            case mode: data['$collision'] = mode.lower()
+
+    @staticmethod
+    def draw(self, layout: UILayout, context: Context):
+        layout.use_property_decorate = False
+        compact = context.region.width < 500        
+        (layout.column() if compact else layout).prop(self, 'collision_mode', expand=True)
+
+    def is_empty(self):
+        return not self.modified and self.collision_mode == 'AUTO'
+    
+    def reset(self):
+        self.modified = False
+        self.collision_mode = 'AUTO'
+
 '''
 class ModelData(CollectionData):
     name: StringProperty(name='Name', default='Model')
@@ -81,6 +114,7 @@ class ModelData(CollectionData):
 class SceneData(PropertyGroup):
     #models: CollectionProperty(type=ModelData)
     models_active: bpy.props.IntProperty(default=-1)
+    objects_active: bpy.props.IntProperty(default=-1)
 
     @property
     def data_path(self):
@@ -93,6 +127,7 @@ class SceneData(PropertyGroup):
 ###############################################################################
 
 def register():
+    bpy.types.Object.sourcery_data = bpy.props.PointerProperty(type=ObjectData)
     bpy.types.Scene.sourcery_data = bpy.props.PointerProperty(type=SceneData)
     bpy.types.Collection.sourcery_data = bpy.props.PointerProperty(type=CollectionData)
 
