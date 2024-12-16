@@ -1,7 +1,7 @@
 import bpy
 from .. import ui
 from bpy.types import AddonPreferences, Operator, PropertyGroup, UIList
-from bpy.props import StringProperty, CollectionProperty, IntProperty, PointerProperty
+from bpy.props import StringProperty, CollectionProperty, IntProperty, PointerProperty, EnumProperty
 from .surfaceprops import SurfaceProp, SURFACEPROPS
 
 class GameInfo(PropertyGroup):
@@ -23,6 +23,14 @@ class SourcePrefs:
     games: CollectionProperty(type=GameInfo)
     games_active: IntProperty(default=-1)
     surfaceprops: CollectionProperty(type=SurfaceProp)
+    tab_active: EnumProperty(
+        name='Tab',
+        items=(
+            ('MODELS',  "Models",   'Manage collection exporters.', 'EXPORT', 0),
+            ('OBJECTS', "Objects",  'Manage per-object settings.',  'OBJECT_DATA', 1),
+        ),
+        default='MODELS'
+    )
 
 class SourcePrefsProp(SourcePrefs, PropertyGroup):
     pass
