@@ -1,17 +1,8 @@
 import bpy
+from bpy.props import BoolProperty
 from bpy.types import Object, UIList, UILayout, Operator, Context
-from ...data.scene import SceneData, ObjectData, COLLISION_MODE_ICONS, CollisionModeProperty
+from ...data.scene import SceneData, ObjectData, CollisionModeProperty
 from .. import lists
-
-###############################################################################
-
-COLLISION_MODE_NAMES = {
-    'AUTO': 'Auto',
-    'MESH': 'Add Mesh',
-    'HULL': 'Add Hull',
-    'BOX': 'Add Box',
-    'NONE': 'No Collision',
-}
 
 ###############################################################################
 
@@ -28,19 +19,63 @@ def obj_can_add_data(obj):
 
 class ObjectList(UIList):
     bl_idname = 'SRC_UL_object_list'
-    def draw_item(self, context, layout: UILayout, data, item: Object, icon, active_data, active_propname):
-        layout.prop(item, 'name', text='', icon=COLLISION_MODE_ICONS[item.sourcery_data.collision_mode] or 'OBJECT_DATA', emboss=False, translate=False)
+    collision_mode_dummy: CollisionModeProperty
+    filter_mesh: BoolProperty(name='Filter Mesh Colliders', default=False)
+    filter_hull: BoolProperty(name='Filter Hull Colliders', default=False)
+    filter_box: BoolProperty(name='Filter Box Colliders', default=False)
+    filter_none: BoolProperty(name='Filter Non-Colliders', default=False)
+
+
+    def draw_item(self, context, layout: UILayout, container, item: Object, icon, active_data, active_propname):
+        data: ObjectData = item.sourcery_data
+        layout.prop(item, 'name', text='', icon_value=layout.enum_item_icon(data, 'collision_mode', data.collision_mode) or 'OBJECT_DATA', emboss=False, translate=False)
 
     def filter_items(self, context, data, property):
         items = getattr(data, property)
-        flags = []
-        for item in items:
-            flag = 0
-            if item.type == 'MESH':
-                if obj_has_data(item):
-                    flag = self.bitflag_filter_item
-            flags.append(flag)
+        flag_hide = self.bitflag_filter_item if self.use_filter_invert else 0
+        flag_show = self.bitflag_filter_item if not self.use_filter_invert else 0
+        filter_modes = self.filter_mesh or self.filter_hull or self.filter_box or self.filter_none
+
+        # Filter by name
+        if self.filter_name:
+            flags = bpy.types.UI_UL_list.filter_items_by_name(self.filter_name, self.bitflag_filter_item, items, 'name')
+        else:
+            flags = [flag_show] * len(items)
+        
+        # Filter by presence of data and collision mode
+        for i, item in enumerate(items):
+            if not obj_has_data(item):
+                flags[i] = flag_hide
+            elif filter_modes:
+                if not self.filter_mesh and item.sourcery_data.collision_mode == 'MESH':
+                    flags[i] = flag_hide
+                elif not self.filter_hull and item.sourcery_data.collision_mode == 'HULL':
+                    flags[i] = flag_hide
+                elif not self.filter_box and item.sourcery_data.collision_mode == 'BOX':
+                    flags[i] = flag_hide
+                elif not self.filter_none and item.sourcery_data.collision_mode == 'NONE':
+                    flags[i] = flag_hide
+                
         return (flags, [])
+    
+    def draw_filter(self, context, main_layout: UILayout):
+        layout = main_layout.row()
+
+        # Standard filters
+        row = layout.column().row(align=True)
+        row.prop(self, 'filter_name', text='')
+        row.prop(self, 'use_filter_invert', icon='ARROW_LEFTRIGHT', icon_only=True)
+        row = layout.column().row(align=True)
+        row.prop(self, 'use_filter_sort_alpha', icon='SORTALPHA', icon_only=True)
+        row.prop(self, 'use_filter_sort_reverse', icon=('SORT_DESC' if self.use_filter_sort_reverse else 'SORT_ASC'), icon_only=True)
+
+        # Filter by collision mode
+        row = layout.column().row(align=True)
+        row.prop(self, 'filter_mesh', icon_only=True, icon_value=layout.enum_item_icon(self, 'collision_mode_dummy', 'MESH'))
+        row.prop(self, 'filter_hull', icon_only=True, icon_value=layout.enum_item_icon(self, 'collision_mode_dummy', 'HULL'))
+        row.prop(self, 'filter_box', icon_only=True, icon_value=layout.enum_item_icon(self, 'collision_mode_dummy', 'BOX'))
+        row.prop(self, 'filter_none', icon_only=True, icon_value=layout.enum_item_icon(self, 'collision_mode_dummy', 'NONE'))
+
 
 # Tagged Object List Operators
 ###############################################################################
@@ -96,32 +131,19 @@ class DeselectObject(ObjectListOp, Operator):
         return {'FINISHED'}
     
 
-class SelectAllObjects(Operator):
-    bl_idname = 'src.select_all_objects'
-    bl_description = 'Select all tagged objects.'
-    bl_label = 'Select All'
-    bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        for object in bpy.data.objects:
-            if obj_has_data(object):
-                object.select_set(True)
-        return {'FINISHED'}
-
-
 # Selected Object Operators
 ###############################################################################
 
 class AddTags(Operator):
     bl_idname = 'src.add_tags'
-    bl_description = 'Set tags for the selected objects'
+    bl_description = 'Add tags to the selected objects'
     bl_label = 'Tag Object'
     bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
     collision_mode: CollisionModeProperty
 
     @classmethod
     def poll(cls, context):
-        # True ff any taggable objects are selected
+        # True if any taggable objects are selected
         for obj in context.selected_objects:
             if obj_can_have_data(obj):
                 return True
@@ -131,20 +153,30 @@ class AddTags(Operator):
         last = None
         for obj in context.selected_objects:
             if obj_can_have_data(obj):
-                if self.collision_mode == 'AUTO':
-                    obj.sourcery_data.modified = True
-                else:
-                    obj.sourcery_data.collision_mode = self.collision_mode
+                obj.sourcery_data.collision_mode = self.collision_mode
                 last = obj
         if last is not None:
             SceneData.get(context).objects_active = bpy.data.objects.find(last.name)
         return {'FINISHED'}
 
+class AddTagsDropdown(bpy.types.Menu):
+    bl_idname       = "SRC_MT_add_tags"
+    bl_label        = "Add Selected Objects"
+    bl_description  = "Add tags to the selected objects."
+
+    def draw(self, context):
+        if len(context.selected_objects) == 0:
+            self.layout.label(text='No meshes selected.', icon='ERROR')
+            self.layout.separator()
+        for id, name, desc, icon, number in CollisionModeProperty.keywords['items']:
+            if id != 'AUTO':
+                self.layout.operator(AddTags.bl_idname, icon=icon, text=name).collision_mode = id
+
 class RemoveTags(Operator):
-    bl_idname = 'src.remove_tags'
-    bl_description = 'Clear tags from selected objects'
-    bl_label = 'Clear Tags'
-    bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
+    bl_idname       = 'src.remove_tags'
+    bl_description  = 'Clear tags from selected objects'
+    bl_label        = 'Clear Tags'
+    bl_options      = {'INTERNAL', 'REGISTER', 'UNDO'}
 
     @classmethod
     def poll(cls, context):
@@ -163,33 +195,59 @@ class RemoveTags(Operator):
         return {'FINISHED'}
 
 
-# Object Menu
+# Object List Menu
 ###############################################################################
+
+class SelectAllObjects(Operator):
+    bl_idname = 'src.select_all_objects'
+    bl_description = 'Select all tagged objects.'
+    bl_label = 'Select All'
+    bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        for object in bpy.data.objects:
+            if obj_has_data(object):
+                object.select_set(True)
+        return {'FINISHED'}
+    
+
+class SelectObjectsByTag(Operator):
+    bl_idname = 'src.select_objects_by_tag'
+    bl_description = 'Select objects based on their tags.'
+    bl_label = 'Select By Tag'
+    bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
+    collision_mode: CollisionModeProperty
+
+    def execute(self, context):
+        for object in bpy.data.objects:
+            if obj_has_data(object) and object.sourcery_data.collision_mode == self.collision_mode:
+                object.select_set(True)
+        return {'FINISHED'}
 
 class ObjectMenu(bpy.types.Menu):
     bl_idname = "SRC_MT_object"
-    bl_label = "Object"
+    bl_label = "Object List"
 
     def draw(self, context):
         layout = self.layout
-        layout.operator(SelectAllObjects.bl_idname)
+        layout.operator(SelectAllObjects.bl_idname, icon='SELECT_SET')
+        layout.separator()
+        for id, name, desc, icon, number in CollisionModeProperty.keywords['items']:
+            if id != 'AUTO':
+                layout.operator(SelectObjectsByTag.bl_idname, icon=icon, text='Select Colliders: ' + name).collision_mode = id
 
-# Sidebar Panel
+# Sidebar Panels
 ###############################################################################
 
 def draw_tab_objects(panel, layout: UILayout, context: Context):
-    count = len(context.selected_objects)
-    if count != 0:
-        layout.label(text='Selected Objects (' + str(count) + ')', icon='OBJECT_DATA')
-    else:
-        layout.label(text='Selected Objects', icon='OBJECT_DATA')
-    flow = layout.grid_flow(row_major=True, columns=0 if context.region.width < 200 else 2, even_columns=True, even_rows=False, align=False)
-    flow.operator(AddTags.bl_idname, icon='TAG', text='Add Tags')
-    flow.operator(RemoveTags.bl_idname, icon='PANEL_CLOSE', text='Clear Tags')
+    layout.label(text='Collision Tags', icon='MOD_PHYSICS')
+    flow = layout.grid_flow(row_major=False, columns=0 if context.region.width < 250 else 2, even_columns=True, even_rows=False, align=False)
 
-    for mode, icon in COLLISION_MODE_ICONS.items():
-        if icon:
-            flow.operator(AddTags.bl_idname, icon=icon, text=COLLISION_MODE_NAMES[mode]).collision_mode = mode
+    for id, name, desc, icon, number in CollisionModeProperty.keywords['items']:
+        if id != 'AUTO':
+            flow.operator(AddTags.bl_idname, icon=icon, text=name).collision_mode = id
+
+    layout.operator(RemoveTags.bl_idname, icon='TRASH', text='Clear Tags')
 
     #layout.separator(factor=2, type='LINE')
 
@@ -199,7 +257,7 @@ def draw_panel_object_list(panel, layout: UILayout, context):
     object: Object = lists.draw_list_simple(row, 'SRC_UL_object_list', bpy.data, 'objects', scene_data, 'objects_active')
 
     col = row.column(align=True)
-    col.operator(AddTags.bl_idname, icon='ADD', text='')
+    col.menu(AddTagsDropdown.bl_idname, icon='ADD', text='')
     col.operator(RemoveObject.bl_idname, icon='REMOVE', text='')
     col.separator()
     col.menu(ObjectMenu.bl_idname, icon='DOWNARROW_HLT', text="")
@@ -210,34 +268,45 @@ def draw_panel_object_list(panel, layout: UILayout, context):
 
     if object:
         layout.separator()
-        header, body = layout.panel("SRC_gltf_props")
+        layout.use_property_decorate = False
+        layout.use_property_split = True
+
+        header, layout = layout.panel("SRC_gltf_props")
         header.label(text=object.name)
-        body.use_property_split = True
-        ObjectData.draw(object.sourcery_data, body, context)
+        
+        # Object Data
+        data: ObjectData = object.sourcery_data
+
+        row = layout.split(factor=0.4)
+        col = row.column()
+        col.alignment = 'RIGHT'
+        col.label(text='Collision')
+        col = row.column()
+        row = col.grid_flow(align=True, columns=2)
+        row.use_property_split = False
+        row.column(align=True).prop_enum(data, 'collision_mode', 'MESH')
+        row.column(align=True).prop_enum(data, 'collision_mode', 'HULL')
+        row.column(align=True).prop_enum(data, 'collision_mode', 'BOX')
+        row.column(align=True).prop_enum(data, 'collision_mode', 'NONE')
+
 
 # Properties Panel
 ###############################################################################
 
 class ObjectPanel(bpy.types.Panel):
-    bl_idname = 'SRC_PT_object'
-    bl_label = 'Sourcery'
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "object"
-    bl_options = {'DEFAULT_CLOSED'}
+    bl_idname       = 'SRC_PT_object'
+    bl_label        = 'Sourcery'
+    bl_space_type   = "PROPERTIES"
+    bl_region_type  = "WINDOW"
+    bl_context      = "object"
+    bl_options      = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
         return obj_can_have_data(context.object)
 
     def draw(self, context):
-        layout = self.layout
+        layout = self.layout.column()
         layout.use_property_split = True
         layout.use_property_decorate = False
-        data: ObjectData = context.object.sourcery_data
-
-        col = layout.column()
-        col.enabled = False
-        col.prop(data, 'modified')
-
-        ObjectData.draw(data, layout, context)
+        ObjectData.draw(context.object.sourcery_data, layout, context)

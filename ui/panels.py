@@ -20,6 +20,7 @@ class MainPanel(SourcePanel, Panel):
     def draw(self, context):
         layout = self.layout
         prefs = SourcePreferences.get()
+        layout.use_property_decorate = False
 
         layout.prop(prefs, 'tab_active', expand=True)
         
@@ -38,6 +39,7 @@ class ObjectListPanel(SourcePanel, Panel):
         return SourcePreferences.get().tab_active == 'OBJECTS'
 
     def draw(self, context):
+        self.layout.use_property_decorate = False
         tabs.draw_panel_object_list(self, self.layout, context)
 
 

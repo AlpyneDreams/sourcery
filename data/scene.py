@@ -11,19 +11,11 @@ SCALES = {
     'SCALE_1': 1.0,
 }
 
-COLLISION_MODE_ICONS = {
-    'AUTO': None,
-    'MESH': 'MESH_MONKEY',
-    'HULL': 'MESH_ICOSPHERE',
-    'BOX': 'MESH_CUBE',
-    'NONE': 'GHOST_DISABLED',
-}
-
 CollisionModeProperty = EnumProperty(
     name='Collision',
     items=(
-        ('AUTO',        "Auto",                 'Automatic based on model size.', '', 0),
-        ('MESH',        "Mesh",                 'Concave mesh collider.', 'MESH_MONKEY', 1),
+        ('AUTO',        "Auto",                 'Automatic based on model size.', 'MESH_UVSPHERE', 0),
+        ('MESH',        "Mesh",                 'Concave mesh collider.', 'MESH_DATA', 1),
         ('HULL',        "Hull",                 'Convex hull collider.', 'MESH_ICOSPHERE', 2),
         ('BOX',         "Box",                  'Box collider.', 'MESH_CUBE', 3),
         ('NONE',        "None",                 'No collision.', 'GHOST_DISABLED', 4),
@@ -83,7 +75,6 @@ class CollectionData(PropertyGroup):
         #)
 
 class ObjectData(PropertyGroup):
-    modified: BoolProperty(name='Show in Tag List', default=False)
     collision_mode: CollisionModeProperty
 
     @staticmethod
@@ -94,15 +85,12 @@ class ObjectData(PropertyGroup):
 
     @staticmethod
     def draw(self, layout: UILayout, context: Context):
-        layout.use_property_decorate = False
-        compact = context.region.width < 500        
-        (layout.column() if compact else layout).prop(self, 'collision_mode', expand=True)
+        layout.prop(self, 'collision_mode')
 
     def is_empty(self):
-        return not self.modified and self.collision_mode == 'AUTO'
+        return self.collision_mode == 'AUTO'
     
     def reset(self):
-        self.modified = False
         self.collision_mode = 'AUTO'
 
 '''
