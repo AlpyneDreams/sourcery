@@ -240,8 +240,8 @@ class ObjectMenu(bpy.types.Menu):
 ###############################################################################
 
 def draw_tab_objects(panel, layout: UILayout, context: Context):
-    layout.label(text='Collision Tags', icon='MOD_PHYSICS')
-    flow = layout.grid_flow(row_major=False, columns=0 if context.region.width < 250 else 2, even_columns=True, even_rows=False, align=False)
+    layout.label(text='Collision Tags', icon='MESH_ICOSPHERE')
+    flow = layout.grid_flow(row_major=True, columns=0 if context.region.width < 200 else 2, even_columns=True, even_rows=False, align=False)
 
     for id, name, desc, icon, number in CollisionModeProperty.keywords['items']:
         if id != 'AUTO':
@@ -277,17 +277,25 @@ def draw_panel_object_list(panel, layout: UILayout, context):
         # Object Data
         data: ObjectData = object.sourcery_data
 
-        row = layout.split(factor=0.4)
-        col = row.column()
-        col.alignment = 'RIGHT'
-        col.label(text='Collision')
-        col = row.column()
-        row = col.grid_flow(align=True, columns=2)
+        row: UILayout
+        if context.region.width < 250:
+            row = layout.split(factor=0.4)
+            col = row.column()
+            col.alignment = 'RIGHT'
+            col.label(text='Collision')
+            row = row.column(align=True)
+        else:
+            row = layout.split(factor=0.4)
+            col = row.column()
+            col.alignment = 'RIGHT'
+            col.label(text='Collision')
+            col = row.column()
+            row = col.grid_flow(align=True, columns=2)
         row.use_property_split = False
-        row.column(align=True).prop_enum(data, 'collision_mode', 'MESH')
-        row.column(align=True).prop_enum(data, 'collision_mode', 'HULL')
-        row.column(align=True).prop_enum(data, 'collision_mode', 'BOX')
-        row.column(align=True).prop_enum(data, 'collision_mode', 'NONE')
+        row.prop_enum(data, 'collision_mode', 'MESH')
+        row.prop_enum(data, 'collision_mode', 'HULL')
+        row.prop_enum(data, 'collision_mode', 'BOX')
+        row.prop_enum(data, 'collision_mode', 'NONE')
 
 
 # Properties Panel

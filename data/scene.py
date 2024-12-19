@@ -17,7 +17,7 @@ CollisionModeProperty = EnumProperty(
         ('AUTO',        "Auto",                 'Automatic based on model size.', 'MESH_UVSPHERE', 0),
         ('MESH',        "Mesh",                 'Concave mesh collider.', 'MESH_DATA', 1),
         ('HULL',        "Hull",                 'Convex hull collider.', 'MESH_ICOSPHERE', 2),
-        ('BOX',         "Box",                  'Box collider.', 'MESH_CUBE', 3),
+        ('BOX',         "Box",                  'Box collider.', 'MOD_WIREFRAME', 3),
         ('NONE',        "None",                 'No collision.', 'GHOST_DISABLED', 4),
     ),
     description='Type of collisions to use.',
@@ -85,7 +85,7 @@ class ObjectData(PropertyGroup):
 
     @staticmethod
     def draw(self, layout: UILayout, context: Context):
-        layout.prop(self, 'collision_mode')
+        (layout.row() if context.region.width > 500 else layout).prop(self, 'collision_mode', expand=True)
 
     def is_empty(self):
         return self.collision_mode == 'AUTO'
