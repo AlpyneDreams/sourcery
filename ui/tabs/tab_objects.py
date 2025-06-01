@@ -20,6 +20,7 @@ def obj_can_add_data(obj):
 class ObjectList(UIList):
     bl_idname = 'SRC_UL_object_list'
     collision_mode_dummy: CollisionModeProperty
+    filter_invisible: BoolProperty(name='Filter Invisible', default=False)
     filter_mesh: BoolProperty(name='Filter Mesh Colliders', default=False)
     filter_hull: BoolProperty(name='Filter Hull Colliders', default=False)
     filter_box: BoolProperty(name='Filter Box Colliders', default=False)
@@ -28,7 +29,10 @@ class ObjectList(UIList):
 
     def draw_item(self, context, layout: UILayout, container, item: Object, icon, active_data, active_propname):
         data: ObjectData = item.sourcery_data
-        layout.prop(item, 'name', text='', icon_value=layout.enum_item_icon(data, 'collision_mode', data.collision_mode) or 'OBJECT_DATA', emboss=False, translate=False)
+        if data.collision_mode != 'AUTO':
+            layout.prop(item, 'name', text='', icon_value=layout.enum_item_icon(data, 'collision_mode', data.collision_mode), emboss=False, translate=False)
+        else:
+            layout.prop(item, 'name', text='', icon='RESTRICT_RENDER_ON' if not data.visible else 'OBJECT_DATA', emboss=False, translate=False)
 
     def filter_items(self, context, data, property):
         items = getattr(data, property)
@@ -47,7 +51,9 @@ class ObjectList(UIList):
             if not obj_has_data(item):
                 flags[i] = flag_hide
             elif filter_modes:
-                if not self.filter_mesh and item.sourcery_data.collision_mode == 'MESH':
+                if not self.filter_invisible and not item.sourcery_data.visible:
+                    flags[i] = flag_hide
+                elif not self.filter_mesh and item.sourcery_data.collision_mode == 'MESH':
                     flags[i] = flag_hide
                 elif not self.filter_hull and item.sourcery_data.collision_mode == 'HULL':
                     flags[i] = flag_hide
@@ -71,6 +77,7 @@ class ObjectList(UIList):
 
         # Filter by collision mode
         row = layout.column().row(align=True)
+        row.prop(self, 'filter_invisible', icon_only=True, icon='RESTRICT_RENDER_ON')
         row.prop(self, 'filter_mesh', icon_only=True, icon_value=layout.enum_item_icon(self, 'collision_mode_dummy', 'MESH'))
         row.prop(self, 'filter_hull', icon_only=True, icon_value=layout.enum_item_icon(self, 'collision_mode_dummy', 'HULL'))
         row.prop(self, 'filter_box', icon_only=True, icon_value=layout.enum_item_icon(self, 'collision_mode_dummy', 'BOX'))
@@ -140,6 +147,7 @@ class AddTags(Operator):
     bl_label = 'Tag Object'
     bl_options = {'INTERNAL', 'REGISTER', 'UNDO'}
     collision_mode: CollisionModeProperty
+    visible: BoolProperty(name='Visible', default=True)
 
     @classmethod
     def poll(cls, context):
@@ -153,7 +161,10 @@ class AddTags(Operator):
         last = None
         for obj in context.selected_objects:
             if obj_can_have_data(obj):
-                obj.sourcery_data.collision_mode = self.collision_mode
+                if (self.collision_mode != 'AUTO'):
+                    obj.sourcery_data.collision_mode = self.collision_mode
+                if (self.visible != True):
+                    obj.sourcery_data.visible = self.visible
                 last = obj
         if last is not None:
             SceneData.get(context).objects_active = bpy.data.objects.find(last.name)
@@ -243,10 +254,12 @@ def draw_tab_objects(panel, layout: UILayout, context: Context):
     layout.label(text='Collision Tags', icon='MESH_ICOSPHERE')
     flow = layout.grid_flow(row_major=True, columns=0 if context.region.width < 200 else 2, even_columns=True, even_rows=False, align=False)
 
+    # Collision Tag Buttons
     for id, name, desc, icon, number in CollisionModeProperty.keywords['items']:
         if id != 'AUTO':
             flow.operator(AddTags.bl_idname, icon=icon, text=name).collision_mode = id
 
+    layout.operator(AddTags.bl_idname, icon='RESTRICT_RENDER_ON', text='Invisible').visible = False
     layout.operator(RemoveTags.bl_idname, icon='TRASH', text='Clear Tags')
 
     #layout.separator(factor=2, type='LINE')
@@ -276,22 +289,27 @@ def draw_panel_object_list(panel, layout: UILayout, context):
         
         # Object Data
         data: ObjectData = object.sourcery_data
-
-        row: UILayout
-        if context.region.width < 250:
-            row = layout.split(factor=0.4)
-            col = row.column()
-            col.alignment = 'RIGHT'
-            col.label(text='Collision')
-            row = row.column(align=True)
-        else:
-            row = layout.split(factor=0.4)
-            col = row.column()
-            col.alignment = 'RIGHT'
-            col.label(text='Collision')
-            col = row.column()
-            row = col.grid_flow(align=True, columns=2)
+        
+        row = layout.split(factor=0.4)
+        col = row.column()
+        col.alignment = 'RIGHT'
+        col.label(text='Visibility')
         row.use_property_split = False
+        row.column().prop(data, 'visible', text='Invisible', toggle=True, invert_checkbox=True, icon='RESTRICT_RENDER_ON')
+
+        row = layout.split(factor=0.4)
+        col = row.column()
+        col.alignment = 'RIGHT'
+        col.label(text='Collision')
+        if context.region.width < 250:
+            row = row.column(align=True)
+            row.use_property_split = False
+            row.prop_enum(data, 'collision_mode', 'AUTO')
+        else:
+            col = row.column(align=True)
+            col.use_property_split = False
+            col.prop_enum(data, 'collision_mode', 'AUTO')
+            row = col.grid_flow(align=True, columns=2)
         row.prop_enum(data, 'collision_mode', 'MESH')
         row.prop_enum(data, 'collision_mode', 'HULL')
         row.prop_enum(data, 'collision_mode', 'BOX')

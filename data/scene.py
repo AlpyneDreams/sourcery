@@ -42,7 +42,6 @@ class CollectionData(PropertyGroup):
         default='SCALE_40'
     )
     scale: FloatProperty(name='Custom Scale', default=40.0)
-    #collision: PointerProperty(name='Collision', type=Collection)
     collision_mode: CollisionModeProperty
 
     @staticmethod
@@ -75,6 +74,7 @@ class CollectionData(PropertyGroup):
         #)
 
 class ObjectData(PropertyGroup):
+    visible: BoolProperty(name='Visible', default=True)
     collision_mode: CollisionModeProperty
 
     @staticmethod
@@ -82,15 +82,20 @@ class ObjectData(PropertyGroup):
         match self.collision_mode:
             case 'AUTO': pass
             case mode: data['$collision'] = mode.lower()
+        if not self.visible:
+            data['$visible'] = False
 
     @staticmethod
     def draw(self, layout: UILayout, context: Context):
+        # See also: draw_panel_object_list in tab_objects.py
+        layout.prop(self, 'visible')
         (layout.row() if context.region.width > 500 else layout).prop(self, 'collision_mode', expand=True)
 
     def is_empty(self):
-        return self.collision_mode == 'AUTO'
+        return self.visible and self.collision_mode == 'AUTO'
     
     def reset(self):
+        self.visible = True
         self.collision_mode = 'AUTO'
 
 '''
