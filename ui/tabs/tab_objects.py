@@ -284,36 +284,40 @@ def draw_panel_object_list(panel, layout: UILayout, context):
         layout.use_property_decorate = False
         layout.use_property_split = True
 
-        header, layout = layout.panel("SRC_gltf_props")
+        header, body = layout.panel("SRC_gltf_props")
         header.label(text=object.name)
         
-        # Object Data
-        data: ObjectData = object.sourcery_data
-        
-        row = layout.split(factor=0.4)
-        col = row.column()
-        col.alignment = 'RIGHT'
-        col.label(text='Visibility')
-        row.use_property_split = False
-        row.column().prop(data, 'visible', text='Invisible', toggle=True, invert_checkbox=True, icon='RESTRICT_RENDER_ON')
-
-        row = layout.split(factor=0.4)
-        col = row.column()
-        col.alignment = 'RIGHT'
-        col.label(text='Collision')
-        if context.region.width < 250:
-            row = row.column(align=True)
+        if body:
+            # Object Data
+            data: ObjectData = object.sourcery_data
+            
+            row = body.split(factor=0.4)
+            col = row.column()
+            col.alignment = 'RIGHT'
+            col.label(text='Visibility')
             row.use_property_split = False
-            row.prop_enum(data, 'collision_mode', 'AUTO')
-        else:
-            col = row.column(align=True)
-            col.use_property_split = False
-            col.prop_enum(data, 'collision_mode', 'AUTO')
-            row = col.grid_flow(align=True, columns=2)
-        row.prop_enum(data, 'collision_mode', 'MESH')
-        row.prop_enum(data, 'collision_mode', 'HULL')
-        row.prop_enum(data, 'collision_mode', 'BOX')
-        row.prop_enum(data, 'collision_mode', 'NONE')
+            row.column().prop(data, 'visible', text='Invisible', toggle=True, invert_checkbox=True, icon='RESTRICT_RENDER_ON')
+
+            row = body.split(factor=0.4)
+            col = row.column()
+            col.alignment = 'RIGHT'
+            col.label(text='Collision')
+            if context.region.width < 250:
+                row = row.column(align=True)
+                row.use_property_split = False
+                row.prop_enum(data, 'collision_mode', 'AUTO')
+            else:
+                col = row.column(align=True)
+                col.use_property_split = False
+                col.prop_enum(data, 'collision_mode', 'AUTO')
+                row = col.grid_flow(align=True, columns=2)
+            row.prop_enum(data, 'collision_mode', 'MESH')
+            row.prop_enum(data, 'collision_mode', 'HULL')
+            row.prop_enum(data, 'collision_mode', 'BOX')
+            row.prop_enum(data, 'collision_mode', 'NONE')
+
+    layout.operator('wm.collection_export_all', icon='EXPORT', text='Export All')
+    
 
 
 # Properties Panel
