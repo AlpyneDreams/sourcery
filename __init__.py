@@ -12,8 +12,10 @@ bl_info = {
 GLTF_EXTENSION_NAME = "SRC_scene_data"
 
 import bpy
+import bpy.types
 from . import auto_load
 from .data.scene import CollectionData, ObjectData
+import io_scene_gltf2.io.com.gltf2_io as gltf2
 
 auto_load.init()
 
@@ -75,3 +77,13 @@ class glTF2ExportUserExtension:
                 extension=extension,
                 required=False
             )
+
+    def gather_mesh_hook(self, gltf2_mesh: gltf2.Mesh, blender_mesh: bpy.types.Mesh, blender_object, vertex_groups, modifiers, materials, export_settings):
+        from pprint import pprint
+        for i in range(len(blender_mesh.color_attributes)):
+            attr = f"COLOR_{i}"
+            colors = blender_mesh.color_attributes[i]
+            prim: gltf2.MeshPrimitive
+            for prim in gltf2_mesh.primitives:
+                if attr in prim.attributes:
+                    prim.attributes[attr].name = colors.name
