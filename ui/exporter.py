@@ -30,9 +30,12 @@ class ExportGLTF2_Sourcery(bpy.types.Operator, gltf2.ExportGLTF2_Base, ExportHel
     # Don't export textures
     export_image_format: EnumProperty(default='NONE')
 
-    # Enable certain things by default
+    # Set certain things by default
     export_apply: BoolProperty(default=True)    # apply modifiers
     export_tangents: BoolProperty(default=True) # export tangents
+
+    # We only use 'export_all_vertex_colors' to control if vertex colors are included
+    export_active_vertex_color_when_no_material: BoolProperty(default=False)
 
     def draw(self, context):
         draw_export_properties(self, context, self)
@@ -102,7 +105,7 @@ def export_panel_data(layout, operator):
     body = layout
     if body:
         export_panel_data_scene_graph(body, operator)
-        gltf2.export_panel_data_mesh(body, operator)
+        export_panel_data_mesh(body, operator)
         #gltf2.export_panel_data_material(body, operator)   # not exposed to user
         #gltf2.export_panel_data_shapekeys(body, operator)  # unsupported
         #gltf2.export_panel_data_armature(body, operator)   # unsupported
@@ -111,6 +114,46 @@ def export_panel_data(layout, operator):
 
         if gltf2.is_draco_available():
             gltf2.export_panel_data_compression(body, operator)
+
+def export_panel_data_mesh(layout: bpy.types.UILayout, operator):
+    header, body = layout.panel("GLTF_export_data_mesh", default_closed=True)
+    header.label(text="Mesh")
+    if body:
+        body.prop(operator, 'export_apply')
+        body.prop(operator, 'export_texcoords')
+        body.prop(operator, 'export_all_vertex_colors', text='Vertex Colors')
+        body.prop(operator, 'export_normals')
+        col = body.column()
+        col.active = operator.export_normals
+        col.prop(operator, 'export_tangents')
+        body.prop(operator, 'export_attributes')
+
+        col = body.column()
+        col.prop(operator, 'use_mesh_edges')
+        col.prop(operator, 'use_mesh_vertices')
+
+        col = body.column()
+        col.prop(operator, 'export_shared_accessors')
+
+        # Exclude vertex colors control. We only expose 'export_all_vertex_colors'
+        '''header, sub_body = body.panel("GLTF_export_data_material_vertex_color", default_closed=True)
+        header.label(text="Vertex Colors")
+        if sub_body:
+            row = sub_body.row()
+            row.prop(operator, 'export_vertex_color')
+            if operator.export_vertex_color == "ACTIVE":
+                row = sub_body.row()
+                row.label(
+                    text="Note that fully compliant glTF 2.0 engine/viewer will use it as multiplicative factor for base color.",
+                    icon='ERROR')
+                row = sub_body.row()
+                row.label(text="If you want to use VC for any other purpose than vertex color, you should use custom attributes.")
+            row = sub_body.row()
+            row.active = operator.export_vertex_color != "NONE"
+            row.prop(operator, 'export_all_vertex_colors')
+            row = sub_body.row()
+            row.active = operator.export_vertex_color != "NONE"
+            row.prop(operator, 'export_active_vertex_color_when_no_material')'''
 
 def export_panel_data_scene_graph(layout, operator):
     header, body = layout.panel("GLTF_export_data_scene_graph", default_closed=True)
