@@ -79,11 +79,20 @@ class glTF2ExportUserExtension:
             )
 
     def gather_mesh_hook(self, gltf2_mesh: gltf2.Mesh, blender_mesh: bpy.types.Mesh, blender_object, vertex_groups, modifiers, materials, export_settings):
-        from pprint import pprint
-        for i in range(len(blender_mesh.color_attributes)):
-            attr = f"COLOR_{i}"
-            colors = blender_mesh.color_attributes[i]
-            prim: gltf2.MeshPrimitive
-            for prim in gltf2_mesh.primitives:
+        # Get number of color attributes
+        num_color_attrs = len(blender_mesh.color_attributes)
+
+        # For each primitive
+        prim: gltf2.MeshPrimitive
+        for prim in gltf2_mesh.primitives:
+            # Check if we have a fake COLOR_0 (glTF exporter loves to add this)
+            has_fake_color0 = num_color_attrs < sum(1 for attr in prim.attributes if attr.startswith('COLOR_'))
+
+            # For each color attribute
+            for i in range(num_color_attrs):
+                colors = blender_mesh.color_attributes[i]
+
+                # Assign color attribute names to glTF accessors
+                attr = f'COLOR_{i+1}' if has_fake_color0 else f'COLOR_{i}'
                 if attr in prim.attributes:
                     prim.attributes[attr].name = colors.name
