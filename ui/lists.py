@@ -47,26 +47,25 @@ def draw_list(
     col.separator()
 
     length = len(list)
-    if length > 1:
-        if index > 0 and move_up != None:
-            op = col.operator(move_up, icon='TRIA_UP', text='')
-            if move_up == 'src.move_item_up':
-                op.list_obj = data.data_path
-                op.list_key = key
-                op.index_obj = data_index.data_path
-                op.index_key = key_index
-        else:
-            op = col.operator('src.move_item_up_disabled', icon='TRIA_UP', text='')
-        
-        if index >= 0 and index < length - 1 and move_down != None:
-            op = col.operator(move_down, icon='TRIA_DOWN', text='')
-            if move_down == 'src.move_item_down':
-                op.list_obj = data.data_path
-                op.list_key = key
-                op.index_obj = data_index.data_path
-                op.index_key = key_index
-        else:
-            op = col.operator('src.move_item_down_disabled', icon='TRIA_DOWN', text='')
+    if length > 1 and index > 0 and move_up != None:
+        op = col.operator(move_up, icon='TRIA_UP', text='')
+        if move_up == 'src.move_item_up':
+            op.list_obj = data.data_path
+            op.list_key = key
+            op.index_obj = data_index.data_path
+            op.index_key = key_index
+    else:
+        op = col.operator('src.move_item_up_disabled', icon='TRIA_UP', text='')
+    
+    if length > 1 and index >= 0 and index < length - 1 and move_down != None:
+        op = col.operator(move_down, icon='TRIA_DOWN', text='')
+        if move_down == 'src.move_item_down':
+            op.list_obj = data.data_path
+            op.list_key = key
+            op.index_obj = data_index.data_path
+            op.index_key = key_index
+    else:
+        op = col.operator('src.move_item_down_disabled', icon='TRIA_DOWN', text='')
 
     if index >= 0 and index < length:
         return list[index]

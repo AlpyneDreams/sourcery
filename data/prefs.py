@@ -73,14 +73,14 @@ class SourcePreferences(SourcePrefs, AddonPreferences):
         header = layout.row()
         header.alignment = 'CENTER'
         header.label(text="Games")
-        game = ui.draw_list(layout, 'SRC_UL_game_list', prefs, 'games', prefs, 'games_active', rows=(4 if len(self.games) > 1 else 3))
+        #game = ui.draw_list(layout, 'SRC_UL_game_list', prefs, 'games', prefs, 'games_active', rows=(4 if len(self.games) > 1 else 3))
         
-        if game is not None:
-            col = layout.column()
-            col.use_property_split = True
-            col.use_property_decorate = False
-            col.prop(game, 'name')
-            col.prop(game, 'gamedir')
+        #if game is not None:
+        #    col = layout.column()
+        #    col.use_property_split = True
+        #    col.use_property_decorate = False
+        #    col.prop(game, 'name')
+        #    col.prop(game, 'gamedir')
 
 ###############################################################################
 

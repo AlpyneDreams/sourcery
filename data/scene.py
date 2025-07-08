@@ -1,7 +1,8 @@
 import bpy
 from bpy.types import PropertyGroup, UIList, Collection, UILayout, Context
-from bpy.props import StringProperty, PointerProperty, BoolProperty, FloatProperty, EnumProperty
+from bpy.props import StringProperty, IntProperty, BoolProperty, FloatProperty, EnumProperty, CollectionProperty
 from .surfaceprops import SurfaceProp
+from ..ui import lists
 
 SCALES = {
     'SCALE_40': 40.0,
@@ -24,6 +25,18 @@ CollisionModeProperty = EnumProperty(
     default='AUTO'
 )
 
+class MaterialPath(PropertyGroup):
+    path: StringProperty(
+        name='Path',
+        description='Material path to search (relative to materials/)',
+        default='models/'
+    )
+
+class MaterialPathList(UIList):
+    bl_idname = 'SRC_UL_cdmaterials'
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
+        layout.prop(item, 'path', text='', icon='FILE_FOLDER', emboss=False, translate=False)
+
 class CollectionData(PropertyGroup):
     #collision: PointerProperty(name='Collision', type=Collection)
     #surfaceprops: CollectionProperty(type=SurfaceProp)
@@ -43,6 +56,8 @@ class CollectionData(PropertyGroup):
     )
     scale: FloatProperty(name='Custom Scale', default=40.0)
     collision_mode: CollisionModeProperty
+    cdmaterials: CollectionProperty(type=MaterialPath)
+    cdmaterials_active: IntProperty(default=-1)
 
     @staticmethod
     def save_to_gltf(self, data):
@@ -55,6 +70,13 @@ class CollectionData(PropertyGroup):
             case 'AUTO': pass
             case mode: data['$collision'] = mode.lower()
 
+        if len(self.cdmaterials) > 0:
+            data['$cdmaterials'] = [m.path for m in self.cdmaterials]
+
+    @property
+    def data_path(self):
+        return f'collection.sourcery_data'
+
     @staticmethod
     def draw(self, layout: UILayout, context: Context):
         compact = context.region.width < 500
@@ -64,7 +86,17 @@ class CollectionData(PropertyGroup):
         layout.prop(self, 'scale_mode')
         if self.scale_mode == 'CUSTOM':
             layout.prop(self, 'scale')
-        #layout.prop(data, 'collision', icon='MESH_ICOSPHERE')
+
+        # temp_override doesn't fucking work for operators so we have to use this undocumented shit
+        # https://blender.stackexchange.com/a/203443
+        layout.context_pointer_set('collection', context.collection)
+
+        layout.label(text='Material Folders')
+        path = lists.draw_list(layout, MaterialPathList.bl_idname, self, 'cdmaterials', self, 'cdmaterials_active')
+        if path is not None:
+            col = layout.column()
+            col.prop(path, 'path')
+        
         #layout.prop_search(
         #    data, 'surfaceprop',
         #    prefs, 'surfaceprops',
