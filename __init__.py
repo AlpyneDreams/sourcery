@@ -3,7 +3,7 @@ bl_info = {
     "author" : "Alpyne",
     "description" : "Source Engine glTF tools.",
     "blender" : (4, 2, 0),
-    "version" : (1, 0, 3),
+    "version" : (1, 1, 0),
     "location" : "",
     "warning" : "",
     "category" : "Generic"
