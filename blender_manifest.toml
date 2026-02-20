@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "sourcery"
-version = "1.1.0"
+version = "1.1.1"
 name = "Sourcery"
 tagline = "Source Engine glTF tools."
 maintainer = "Alpyne"
