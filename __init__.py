@@ -45,7 +45,7 @@ class glTF2ExportUserExtension:
             return print(f"[Sourcery] Error: Failed to find collection '{collection_id}'")
         
         # Get Sourcery data
-        if 'sourcery_data' not in collection:
+        if not hasattr(collection, 'sourcery_data'):
             return print(f"[Sourcery] Error: Collection '{collection_id}' has no Sourcery data")
         data = collection.sourcery_data
         if not data:
@@ -64,7 +64,7 @@ class glTF2ExportUserExtension:
         )
 
     def gather_node_hook(self, gltf2_node, blender_object, export_settings):
-        if 'sourcery_data' not in blender_object:
+        if not hasattr(blender_object, 'sourcery_data'):
             return
     
         data = blender_object.sourcery_data

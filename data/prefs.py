@@ -102,4 +102,6 @@ def register():
 
 def pre_unregister():
     # Save prefs to the WindowManager so they aren't cleared when we reload the addon
-    SourcePreferences.get().save(bpy.context.window_manager.sourcery_prefs)
+    #TODO: This is broken
+    #SourcePreferences.get().save(bpy.context.window_manager.sourcery_prefs)
+    pass
